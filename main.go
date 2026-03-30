@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
@@ -66,12 +67,15 @@ func main() {
 	}))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("handling / request")
 		f, err := staticFiles.Open("static/index.html")
 		if err != nil {
+			log.Println("handling / request")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer f.Close()
+
 		if _, err := io.Copy(w, f); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -92,7 +96,7 @@ func main() {
 	srv := &http.Server{
 		Addr:              ":" + port,
 		Handler:           router,
-		ReadHeaderTimeout: 67,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	p, err := strconv.Atoi(port)
@@ -100,6 +104,8 @@ func main() {
 		log.Fatalf("Invalid port: %v", err)
 	}
 
-	log.Fatalf("Serving on port: %d", p)
-	log.Fatal(srv.ListenAndServe())
+	log.Printf("Serving on port: %d", p)
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
